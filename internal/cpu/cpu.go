@@ -1,10 +1,13 @@
 package cpu
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/candy12t/ggbe/internal/peripherals"
 )
+
+var ErrNotImplementedOpcode = errors.New("Not Implemented opcode")
 
 type ctx struct {
 	opcode uint8
@@ -12,8 +15,19 @@ type ctx struct {
 }
 
 type CPU struct {
-	Regs Registers
-	Ctx  ctx
+	Regs *Registers
+	Ctx  *ctx
+}
+
+func NewCPU() *CPU {
+	return &CPU{
+		Regs: newRegisters(),
+		Ctx:  newCtx(),
+	}
+}
+
+func newCtx() *ctx {
+	return &ctx{}
 }
 
 func (c *CPU) Fetch(bus *peripherals.Peripherals) {
@@ -22,13 +36,14 @@ func (c *CPU) Fetch(bus *peripherals.Peripherals) {
 	c.Ctx.cb = false
 }
 
-func (c *CPU) Decode(bus *peripherals.Peripherals) {
+func (c *CPU) Decode(bus *peripherals.Peripherals) error {
 	switch c.Ctx.opcode {
 	case 0x00:
 		c.nop(bus)
 	default:
-		panic(fmt.Sprintf("Not Implemented: %v\n", c.Ctx.opcode))
+		return fmt.Errorf("%w: %v\n", ErrNotImplementedOpcode, c.Ctx.opcode)
 	}
+	return nil
 }
 
 func (c *CPU) EmulateCycle(bus *peripherals.Peripherals) {
