@@ -1,5 +1,7 @@
 package ppu
 
+import "github.com/candy12t/ggbe/internal/ram"
+
 // PPU mode
 type mode int
 
@@ -36,24 +38,25 @@ const (
 // PPU render `bg`, `window` and `sprite`.
 type PPU struct {
 	mode mode
-	lcdc uint8         // 0xFF40, LCDC register
-	stat uint8         // 0xFF41, STAT register
-	scy  uint8         // 0xFF42, SCY register specify how much to scroll `bg`.
-	scx  uint8         // 0xFF43, SCX register specify how much to scroll `bg`.
-	ly   uint8         // 0xFF44, LY register hold which line of the LCD is currently being renderd.
-	lyc  uint8         // 0xFF45, LYC register
-	bgp  uint8         // 0xFF47, BGP register hold pallet data used when rendering `bg` and `window`.
-	obp0 uint8         // 0xFF48, OBP0 register hold pallet data used when rendering `sprite`.
-	obp1 uint8         // 0xFF49, OBP1 register hold pallet data used when rendering `sprite`.
-	wy   uint8         // 0xFF4A, WY register specify the upper left position of the window.
-	wx   uint8         // 0xFF4B, WX register specify the upper left position of the window.
-	vram [0x2000]uint8 // 0x8000 ~ 0x9FFF, VRAM is Video RAM. the size is 8 KiB.
-	oam  [0xA0]uint8   // 0xFE00 ~ 0xFE9F, OAM is Object Attribute Memory. the size is 160 B.
+	lcdc uint8       // 0xFF40, LCDC register
+	stat uint8       // 0xFF41, STAT register
+	scy  uint8       // 0xFF42, SCY register specify how much to scroll `bg`.
+	scx  uint8       // 0xFF43, SCX register specify how much to scroll `bg`.
+	ly   uint8       // 0xFF44, LY register hold which line of the LCD is currently being renderd.
+	lyc  uint8       // 0xFF45, LYC register
+	bgp  uint8       // 0xFF47, BGP register hold pallet data used when rendering `bg` and `window`.
+	obp0 uint8       // 0xFF48, OBP0 register hold pallet data used when rendering `sprite`.
+	obp1 uint8       // 0xFF49, OBP1 register hold pallet data used when rendering `sprite`.
+	wy   uint8       // 0xFF4A, WY register specify the upper left position of the window.
+	wx   uint8       // 0xFF4B, WX register specify the upper left position of the window.
+	vram *ram.VRAM   // 0x8000 ~ 0x9FFF
+	oam  [0xA0]uint8 // 0xFE00 ~ 0xFE9F, OAM is Object Attribute Memory. the size is 160 B.
 }
 
 func New() *PPU {
 	return &PPU{
 		mode: OAMScan,
+		vram: ram.NewVRAM(),
 	}
 }
 
@@ -63,7 +66,7 @@ func (p *PPU) Read(addr uint16) uint8 {
 		if p.mode == Drawing {
 			return 0xFF
 		}
-		return p.vram[addr&0x1FFF]
+		return p.vram.Read(addr)
 	case 0xFE00 <= addr && addr <= 0xFE9F:
 		if p.mode == Drawing || p.mode == OAMScan {
 			return 0xFF
@@ -103,7 +106,7 @@ func (p *PPU) Write(addr uint16, val uint8) {
 	switch {
 	case 0x8000 <= addr && addr <= 0x9FFF:
 		if p.mode != Drawing {
-			p.vram[addr&0x1FFF] = val
+			p.vram.Write(addr, val)
 		}
 	case 0xFE00 <= addr && addr <= 0xFE9F:
 		if p.mode != Drawing && p.mode != OAMScan {

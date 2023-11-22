@@ -2,24 +2,23 @@ package peripherals
 
 import (
 	"github.com/candy12t/ggbe/internal/bootrom"
-	"github.com/candy12t/ggbe/internal/hram"
 	"github.com/candy12t/ggbe/internal/ppu"
-	"github.com/candy12t/ggbe/internal/wram"
+	"github.com/candy12t/ggbe/internal/ram"
 )
 
 // Peripherals is MMIO (memory mapped I/O)
 type Peripherals struct {
 	bootrom *bootrom.BootROM
-	wram    *wram.WRAM
-	hram    *hram.HRAM
+	wram    *ram.WRAM
+	hram    *ram.HRAM
 	ppu     *ppu.PPU
 }
 
 func New(bootrom *bootrom.BootROM) *Peripherals {
 	return &Peripherals{
 		bootrom: bootrom,
-		wram:    wram.New(),
-		hram:    hram.New(),
+		wram:    ram.NewWRAM(),
+		hram:    ram.NewHRAM(),
 		ppu:     ppu.New(),
 	}
 }
